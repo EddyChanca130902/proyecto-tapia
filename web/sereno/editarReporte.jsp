@@ -27,6 +27,21 @@
     } catch (Exception e) {
         e.printStackTrace();
     }
+
+    // ✅ Detectar rol y definir a dónde volver
+    HttpSession ses = request.getSession(false);
+    String rol = (ses != null && ses.getAttribute("rol") != null)
+                 ? ses.getAttribute("rol").toString()
+                 : "login";
+
+    String destino = "login.jsp";
+    if ("sereno".equals(rol)) {
+        destino = "../sereno.jsp";
+    } else if ("vecino".equals(rol)) {
+        destino = "../vecino.jsp";
+    } else if ("admin".equals(rol)) {
+        destino = "../admin.jsp";
+    }
 %>
 
 <!DOCTYPE html>
@@ -76,7 +91,8 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a href="../sereno.jsp" class="btn btn-secondary">
+                    <!-- ✅ Botón dinámico según rol -->
+                    <a href="<%= destino %>" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Volver
                     </a>
                     <button type="submit" class="btn btn-warning">

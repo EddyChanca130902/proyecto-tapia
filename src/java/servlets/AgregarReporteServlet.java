@@ -15,6 +15,9 @@ public class AgregarReporteServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        
+        request.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
 
         // ✅ Verificar sesión
         HttpSession session = request.getSession(false);
@@ -61,7 +64,16 @@ public class AgregarReporteServlet extends HttpServlet {
 
             System.out.println("✅ Reporte insertado correctamente por usuario: " + nombreReportante);
 
-            response.sendRedirect("sereno.jsp?msg=ok");
+            String rol = (String) session.getAttribute("rol");
+
+            if ("sereno".equals(rol)) {
+                response.sendRedirect("sereno.jsp?msg=ok");
+            } else if ("vecino".equals(rol)) {
+                response.sendRedirect("vecino.jsp?msg=ok");
+            } else {
+                response.sendRedirect("login.jsp");
+            }
+
         } catch (SQLException e) {
             e.printStackTrace();
             response.getWriter().println("❌ Error SQL: " + e.getMessage());
