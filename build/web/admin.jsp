@@ -1,12 +1,14 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@page import="jakarta.servlet.http.HttpSession"%>
+<%@ page import="java.sql.*, utils.Conexion" %>
 <%
-    // Verificar sesión
-    if (session.getAttribute("userRole") == null || !session.getAttribute("userRole").equals("admin")) {
+    // Verificar sesión (usa el mismo nombre que en el servlet)
+    if (session.getAttribute("rol") == null || !session.getAttribute("rol").equals("admin")) {
         response.sendRedirect("login.jsp");
         return;
     }
 %>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -177,6 +179,10 @@
                         <a href="#" class="list-group-item list-group-item-action" onclick="showSection('reportes-atendidos', this)">
                             <i class="bi bi-check-circle"></i> Reportes Atendidos
                         </a>
+                            <a href="admin/usuarios.jsp" class="list-group-item list-group-item-action">
+                               <i class="bi bi-person-plus"></i> Gestionar Usuarios
+                          </a>
+
                     </div>
                 </div>
             </div>
@@ -295,75 +301,88 @@
                     </div>
                 </div>
 
-                <!-- Todos los Reportes Section -->
                 <div id="todos-reportes" class="content-section">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="bi bi-clipboard-data"></i> Gestión de Reportes</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Categoría</th>
-                                            <th>Lugar</th>
-                                            <th>Estado</th>
-                                            <th>Fecha</th>
-                                            <th>Reportado por</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><strong>RPT-250120-001</strong></td>
-                                            <td>Alumbrado Público</td>
-                                            <td>Av. Principal 123</td>
-                                            <td><span class="badge badge-proceso">En Proceso</span></td>
-                                            <td>20 Ene 2025</td>
-                                            <td>Sereno Municipal</td>
-                                            <td>
-                                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#gestionModal">
-                                                    <i class="bi bi-gear"></i> Gestionar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr class="table-warning">
-                                            <td>
-                                                <strong>VEC-250120-002</strong>
-                                                <br><small class="text-danger">⚠️ URGENTE</small>
-                                            </td>
-                                            <td>Pistas y Veredas</td>
-                                            <td>Calle Los Olivos 456</td>
-                                            <td><span class="badge badge-pendiente">Pendiente</span></td>
-                                            <td>20 Ene 2025</td>
-                                            <td>Vecino Municipal<br><small class="text-muted">Juan Pérez</small></td>
-                                            <td>
-                                                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#gestionModal">
-                                                    <i class="bi bi-gear"></i> Gestionar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>RPT-250119-003</strong></td>
-                                            <td>Alcantarillado</td>
-                                            <td>Jr. Las Flores 789</td>
-                                            <td><span class="badge badge-cerrado">Cerrado</span></td>
-                                            <td>19 Ene 2025</td>
-                                            <td>Sereno Municipal</td>
-                                            <td>
-                                                <button class="btn btn-outline-success btn-sm" disabled>
-                                                    <i class="bi bi-check-circle"></i> Completado
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-clipboard-data"></i> Gestión de Reportes</h4>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario ID</th>
+                            <th>Categoría</th>
+                            <th>Lugar</th>
+                            <th>Urgente</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <%
+                            try (Connection conn = Conexion.getConnection();
+                                 Statement stmt = conn.createStatement();
+                                 ResultSet rs = stmt.executeQuery("SELECT * FROM reportes ORDER BY fecha_reporte DESC")) {
+
+                                boolean tieneDatos = false;
+                                while (rs.next()) {
+                                    tieneDatos = true;
+                        %>
+                        <tr>
+                            <td><%= rs.getInt("id") %></td>
+                            <td><%= rs.getInt("usuario_id") %></td>
+                            <td><%= rs.getString("categoria") %></td>
+                            <td><%= rs.getString("lugar") %></td>
+                            <td>
+                                <% if (rs.getBoolean("urgente")) { %>
+                                    <span class="badge bg-danger">Sí</span>
+                                <% } else { %>
+                                    <span class="badge bg-secondary">No</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    <%= rs.getString("estado").equals("pendiente") ? "bg-warning" :
+                                        rs.getString("estado").equals("en_proceso") ? "bg-info" :
+                                        "bg-success" %>">
+                                    <%= rs.getString("estado") %>
+                                </span>
+                            </td>
+                            <td><%= rs.getTimestamp("fecha_reporte") %></td>
+                            <td>
+                                <a href="admin/editarReporte.jsp?id=<%= rs.getInt("id") %>" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                <a href="EliminarReporteServlet?id=<%= rs.getInt("id") %>"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('¿Seguro que deseas eliminar este reporte?');">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <%
+                                }
+                                if (!tieneDatos) {
+                        %>
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No hay reportes registrados aún.</td>
+                        </tr>
+                        <%
+                                }
+                            } catch (Exception e) {
+                                out.println("<tr><td colspan='8' class='text-center text-danger'>Error: " + e.getMessage() + "</td></tr>");
+                            }
+                        %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Reportes Atendidos Section -->
                 <div id="reportes-atendidos" class="content-section">
@@ -483,6 +502,7 @@
                         </div>
                     </div>
                 </div>
+                
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success" data-bs-dismiss="modal">Actualizar Reporte</button>
